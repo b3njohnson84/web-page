@@ -86,4 +86,164 @@
   }
 
   /* Mobile friendly */
-  @media (max-width: 76
+  @media (max-width: 768px) {
+    form {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .save-btn {
+      grid-column: span 2;
+    }
+
+    .table-wrapper {
+      overflow-x: auto;
+    }
+  }
+</style>
+</head>
+
+<body>
+
+<h1>6-Column Data Form</h1>
+
+<form id="dataForm">
+  <input required placeholder="Column 1">
+  <input required placeholder="Column 2">
+  <input required placeholder="Column 3">
+  <input required placeholder="Column 4">
+  <input required placeholder="Column 5">
+  <input required placeholder="Column 6">
+  <button class="save-btn" type="submit">Add Row</button>
+</form>
+
+<div class="actions">
+  <button class="export-btn" onclick="exportCSV()">Export CSV</button>
+</div>
+
+<div class="table-wrapper">
+<table>
+  <thead>
+    <tr>
+      <th>Col 1</th>
+      <th>Col 2</th>
+      <th>Col 3</th>
+      <th>Col 4</th>
+      <th>Col 5</th>
+      <th>Col 6</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody id="tableBody"></tbody>
+</table>
+</div>
+
+<script>
+  const form = document.getElementById("dataForm");
+  const tableBody = document.getElementById("tableBody");
+
+  function getData() {
+    return JSON.parse(localStorage.getItem("formData")) || [];
+  }
+
+  function saveData(data) {
+    localStorage.setItem("formData", JSON.stringify(data));
+  }
+
+  function renderTable() {
+    const data = getData();
+    tableBody.innerHTML = "";
+
+    data.forEach((row, index) => {
+      const tr = document.createElement("tr");
+
+      row.forEach(cell => {
+        const td = document.createElement("td");
+        td.textContent = cell;
+        tr.appendChild(td);
+      });
+
+      const actionsTd = document.createElement("td");
+
+      const editBtn = document.createElement("button");
+      editBtn.textContent = "Edit";
+      editBtn.className = "edit-btn";
+      editBtn.onclick = () => editRow(index);
+
+      const deleteBtn = document.createElement("button");
+      deleteBtn.textContent = "Delete";
+      deleteBtn.className = "delete-btn";
+      deleteBtn.onclick = () => deleteRow(index);
+
+      actionsTd.append(editBtn, deleteBtn);
+      tr.appendChild(actionsTd);
+
+      tableBody.appendChild(tr);
+    });
+  }
+
+  function editRow(index) {
+    const data = getData();
+    const tr = tableBody.children[index];
+    tr.innerHTML = "";
+
+    data[index].forEach((value, i) => {
+      const td = document.createElement("td");
+      const input = document.createElement("input");
+      input.value = value;
+      td.appendChild(input);
+      tr.appendChild(td);
+    });
+
+    const saveTd = document.createElement("td");
+    const saveBtn = document.createElement("button");
+    saveBtn.textContent = "Save";
+    saveBtn.className = "save-row-btn";
+
+    saveBtn.onclick = () => {
+      const inputs = tr.querySelectorAll("input");
+      data[index] = Array.from(inputs).map(i => i.value);
+      saveData(data);
+      renderTable();
+    };
+
+    saveTd.appendChild(saveBtn);
+    tr.appendChild(saveTd);
+  }
+
+  function deleteRow(index) {
+    const data = getData();
+    data.splice(index, 1);
+    saveData(data);
+    renderTable();
+  }
+
+  function exportCSV() {
+    const data = getData();
+    if (!data.length) return;
+
+    let csv = data.map(row =>
+      row.map(cell => `"${cell.replace(/"/g, '""')}"`).join(",")
+    ).join("\n");
+
+    const blob = new Blob([csv], { type: "text/csv" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "data.csv";
+    link.click();
+  }
+
+  form.addEventListener("submit", e => {
+    e.preventDefault();
+    const values = Array.from(form.querySelectorAll("input")).map(i => i.value);
+    const data = getData();
+    data.push(values);
+    saveData(data);
+    form.reset();
+    renderTable();
+  });
+
+  renderTable();
+</script>
+
+</body>
+</html>
